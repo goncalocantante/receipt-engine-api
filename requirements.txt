@@ -1,1 +1,5 @@
 fastapi[all]
+google-genai
+uvicorn
+python-multipart
+Pillow

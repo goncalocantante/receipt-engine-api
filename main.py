@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends
-from app_gemini import extract_receipt_data
+from app_gemini import extract_receipt_data, GeminiUnavailableError
 import uvicorn
 import os
 
@@ -40,5 +40,17 @@ async def extract(
             raise HTTPException(status_code=500, detail="Failed to extract data from image.")
             
         return result
+    except GeminiUnavailableError as e:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": {
+                    "code": 503,
+                    "message": str(e),
+                    "status": "UNAVAILABLE",
+                    "reason": "llm_unavailable_spikes_in_demand"
+                }
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

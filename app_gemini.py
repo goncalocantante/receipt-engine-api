@@ -14,6 +14,10 @@ if not GEMINI_API_KEY:
 # Initialize the new Google GenAI client
 client = genai.Client(api_key=GEMINI_API_KEY)
 
+class GeminiUnavailableError(Exception):
+    """Exception raised when the Gemini LLM service is unavailable (e.g. 503 High Demand)."""
+    pass
+
 # Define schemas for structured outputs
 class ReceiptItem(BaseModel):
     name: str = Field(description="The name of the product.")
@@ -67,8 +71,13 @@ def extract_receipt_data(image_source):
             
         return json.loads(content)
     except Exception as e:
-        print(f"❌ Error during extraction: {e}")
-        return None
+        error_msg = str(e)
+        print(f"❌ Error during extraction: {error_msg}")
+        if "503" in error_msg or "UNAVAILABLE" in error_msg or "high demand" in error_msg.lower():
+            raise GeminiUnavailableError(
+                "The extraction service is currently experiencing high demand. Please try again in a few moments."
+            ) from e
+        raise e
 
 if __name__ == "__main__":
     # Test with a local file
